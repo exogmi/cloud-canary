@@ -78,7 +78,6 @@ def deploy_instance(args):
     destroynode = driver.destroy_node(node)
     
     logging.info('Successfully destroyed the instance %s', name)
-    logging.info('The whole check took %s seconds', exectime)
     logging.info('Script completed')
 
 #main
