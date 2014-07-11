@@ -97,7 +97,7 @@ if __name__ == "__main__":
                      'service': "Cloud_canary.check",
                      'description': txt,
                      'state': 'warning',
-                     'tags': ['cloud_canary.py'],
+                     'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 0})
         sys.exit(1)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         client.send({'host': host,
                      'service': "Cloud_canary.check",
                      'state': 'ok',
-                     'tags': ['cloud_canary.py'],
+                     'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': exectime})
 
