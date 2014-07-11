@@ -7,7 +7,8 @@ The goal of the script is to schedule a recurring test on a given cloud provider
 
 The script relies on Apache Libcloud (https://libcloud.apache.org/) and Riemann (http://riemann.io/).
 
-Requirements:
+Requirements
+------------
 
 You may install the requirements using the following commands:
 
