@@ -28,7 +28,6 @@ except ImportError:
     sys.exit(1)
 
 
-start_time = time.time()
 logfile = "/var/log/cloud-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -86,6 +85,7 @@ def deploy_instance(args):
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
+    start_time = time.time()
     try:
         deploy_instance(args)
     except Exception as e:
