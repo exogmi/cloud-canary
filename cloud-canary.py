@@ -97,18 +97,27 @@ if __name__ == "__main__":
                      'service': "Cloud_canary.check",
                      'description': txt,
                      'state': 'warning',
-                     'tags': ['cloud_canary.py', 'graph'],
+                     'tags': ['cloud_canary.py'],
                      'ttl': 3800,
-                     'metric': 1})
+                     'metric': 0})
         sys.exit(1)
     finally:
         exectime = time.time() - start_time
         client=bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "Cloud_canary.check.exectime",
+                     'service': "Cloud_canary.exectime",
+                     'state': 'ok',
+                     'tags': ['duration'],
+                     'ttl': 3800,
+                     'metric': exectime})
+        client.send({'host': host,
+                     'service': "Cloud_canary.check",
                      'state': 'ok',
                      'tags': ['cloud_canary.py'],
                      'ttl': 3800,
                      'metric': exectime})
+
+
+
 
