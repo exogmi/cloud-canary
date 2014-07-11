@@ -97,7 +97,7 @@ if __name__ == "__main__":
                      'service': "Cloud_canary.check",
                      'description': txt,
                      'state': 'warning',
-                     'tags': ['cloud_canary.py'],
+                     'tags': ['cloud_canary.py', 'graph'],
                      'ttl': 3800,
                      'metric': 1})
         sys.exit(1)
