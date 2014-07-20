@@ -101,7 +101,7 @@ if __name__ == "__main__":
                      'state': 'ok',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
-                     'metric': exectime})
+                     'metric': 0})
     except Exception as e:
         pass
         logging.exception("An exception occured. Exception is: %s", e)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                      'state': 'warning',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
-                     'metric': 0})
+                     'metric': 1})
         sys.exit(1)
 
 

@@ -84,7 +84,7 @@ if __name__ == "__main__":
                      'state': 'ok',
                      'tags': ['api_canary.py', 'duration'],
                      'ttl': 600,
-                     'metric': exectime})
+                     'metric': 1})
     except Exception as e:
         pass
         logging.exception("An exception occured. Exception is: %s", e)
