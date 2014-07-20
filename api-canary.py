@@ -83,8 +83,10 @@ if __name__ == "__main__":
                      'state': 'ok',
                      'tags': ['api_canary.py', 'duration'],
                      'ttl': 600,
-                     'metric': 1})
+                     'metric': 0})
+
         logging.info('Script completed successfully')
+
     except Exception as e:
         pass
         logging.exception("An exception occured. Exception is: %s", e)
@@ -98,7 +100,7 @@ if __name__ == "__main__":
                      'state': 'warning',
                      'tags': ['api_canary.py', 'duration'],
                      'ttl': 600,
-                     'metric': 0})
+                     'metric': 1})
         client.send({'host': host,
                      'service': "api_canary.exectime",
                      'state': 'ok',
