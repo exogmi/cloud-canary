@@ -55,7 +55,7 @@ def list_size(args):
     micro = False
 
     for items in size:
-        if size.name == 'Micro'
+        if size.name == 'Micro':
             micro = True
 
     if micro is False:
