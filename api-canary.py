@@ -54,12 +54,12 @@ def list_size(args):
 
     micro = False
 
-    for items in size:
-        if size.name == 'Micro':
+    for item in size:
+        if item.name == 'Micro':
             micro = True
 
     if micro is False:
-        raise Exception ("API call did not returned Micro instance type. This mean the API isn't working correctly")
+        raise Exception ("API call did not returned Micro instance type. This means the API isn't working correctly")
  
     logging.info('Script completed successfully')
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
                      'metric': 0})
         client.send({'host': host,
                      'service': "api_canary.exectime",
-                     'state': 'warning',
+                     'state': 'ok',
                      'tags': ['duration'],
                      'ttl': 600,
                      'metric': exectime})
