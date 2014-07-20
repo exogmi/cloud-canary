@@ -1,11 +1,17 @@
 cloud-canary
 ============
 
-Python script that check cloud provider availability by creating a test instance.
+Bunch of Python scripts that perform various checks to test cloud provider availability.
 
-The goal of the script is to schedule a recurring test on a given cloud provider (in our case exoscale) by creating a "canary instance", try to connect to it using SSH and finally destroy it. If any exception occur during the process, an alarm is sent to Riemann monitoring system.
+- cloud-canary
 
-The script relies on Apache Libcloud (https://libcloud.apache.org/) and Riemann (http://riemann.io/).
+The goal of the script is to schedule a recurring test on a given cloud provider (in our case exoscale) by creating a "canary instance", try to connect to it using SSH and finally destroy it. If any exception occur during the process, an alarm is sent to Riemann monitoring system. Exec time metric is also sent to Riemann to get the latency.
+
+- api-canary
+
+The goal of the script is to schedule a recurring test on a given cloud provider (in our case exoscale) by performing a test api call (list size). If any exception occur during the process, an alarm is sent to Riemann monitoring system. Exec time metric is also sent to Riemann to get the latency.
+
+These scripts relies on Apache Libcloud (https://libcloud.apache.org/) and Riemann (http://riemann.io/).
 
 Requirements
 ------------
@@ -19,4 +25,4 @@ pip install bernhard
 
 ```
 
-Script tested only on Ubuntu.
+Scripts tested only on Ubuntu.

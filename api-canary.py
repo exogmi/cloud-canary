@@ -14,8 +14,6 @@ import socket
 try:
     from libcloud.compute.types import Provider
     from libcloud.compute.providers import get_driver
-    from libcloud.compute.deployment import ScriptDeployment
-    from libcloud.compute.deployment import MultiStepDeployment 
 except ImportError:
     print "It look like libcloud module isn't installed. Please install it using pip install apache-libcloud"
     sys.exit(1)
@@ -28,13 +26,13 @@ except ImportError:
     sys.exit(1)
 
 
-logfile = "/var/log/cloud-canary.log"
+logfile = "/var/log/api-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
 def main():
-    parser = argparse.ArgumentParser(description='This script spawn an instance on exoscale public cloud and execute a dummy command thru SSH. If any error occur during the process, an alarm is being sent to riemann monitoring')
+    parser = argparse.ArgumentParser(description='This script perform a list_size API query on exoscale public cloud. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
     parser.add_argument('-version', action='version', version='%(prog)s 1.0, Loic Lambiel, exoscale')
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
@@ -43,42 +41,27 @@ def main():
     return args
 
  
-def deploy_instance(args):
+def list_size(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY)
+
+    logging.info('Performing query')
 	 
-    size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
-    image = [image for image in driver.list_images() if 'Ubuntu 14.04 LTS 64-bit'
-             in image.name][0]
-	 
-    name = 'canary-check'
+    size = driver.list_sizes() 
 
-    script = ScriptDeployment('echo Iam alive !')
-    msd = MultiStepDeployment([script])
+    micro = False
 
-    logging.info('Deploying instance %s', name)
-    
-    node = driver.deploy_node(name=name, image=image, size=size,
-    			      max_tries=1,
-    			      deploy=msd)
+    for items in size:
+        if size.name == 'Micro'
+            micro = True
 
-    nodename = str(node.name)
-    nodeid = str(node.uuid)
-    nodeip = str(node.public_ips)
-    logging.info('Instance successfully deployed : %s, %s, %s', nodename,nodeid,nodeip)
-    # The stdout of the deployment can be checked on the `script` object
-    pprint(script.stdout)
-    
-    logging.info('Successfully executed echo command thru SSH')
-    logging.info('Destroying the instance now')
-    # destroy our canary node
-    destroynode = driver.destroy_node(node)
-    
-    logging.info('Successfully destroyed the instance %s', name)
-    logging.info('Script completed')
+    if micro is False:
+        raise Exception ("API call did not returned Micro instance type. This mean the API isn't working correctly")
+ 
+    logging.info('Script completed successfully')
 
 #main
 if __name__ == "__main__":
@@ -86,37 +69,42 @@ if __name__ == "__main__":
     RIEMANNHOST = args['RIEMANNHOST']
     start_time = time.time()
     try:
-        deploy_instance(args)
+        list_size(args)
         exectime = time.time() - start_time
         client=bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "Cloud_canary.exectime",
+                     'service': "api_canary.exectime",
                      'state': 'ok',
                      'tags': ['duration'],
-                     'ttl': 3800,
+                     'ttl': 600,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': "Cloud_canary.check",
+                     'service': "api_canary.check",
                      'state': 'ok',
-                     'tags': ['cloud_canary.py', 'duration'],
-                     'ttl': 3800,
+                     'tags': ['api_canary.py', 'duration'],
+                     'ttl': 600,
                      'metric': exectime})
     except Exception as e:
         pass
         logging.exception("An exception occured. Exception is: %s", e)
         client=bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
-        txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e,logfile)
+        exectime = 61
+        txt = 'An exception occurred on api_canary.py: %s. See logfile %s for more info' % (e,logfile)
         client.send({'host': host,
-                     'service': "Cloud_canary.check",
+                     'service': "api_canary.check",
                      'description': txt,
                      'state': 'warning',
-                     'tags': ['cloud_canary.py', 'duration'],
-                     'ttl': 3800,
+                     'tags': ['api_canary.py', 'duration'],
+                     'ttl': 600,
                      'metric': 0})
+        client.send({'host': host,
+                     'service': "api_canary.exectime",
+                     'state': 'warning',
+                     'tags': ['duration'],
+                     'ttl': 600,
+                     'metric': exectime})
         sys.exit(1)
-
-
 
 
