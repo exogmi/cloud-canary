@@ -61,7 +61,6 @@ def list_size(args):
     if micro is False:
         raise Exception ("API call did not returned Micro instance type. This means the API isn't working correctly")
  
-    logging.info('Script completed successfully')
 
 #main
 if __name__ == "__main__":
@@ -85,6 +84,7 @@ if __name__ == "__main__":
                      'tags': ['api_canary.py', 'duration'],
                      'ttl': 600,
                      'metric': 1})
+        logging.info('Script completed successfully')
     except Exception as e:
         pass
         logging.exception("An exception occured. Exception is: %s", e)
