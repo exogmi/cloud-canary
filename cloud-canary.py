@@ -115,7 +115,12 @@ if __name__ == "__main__":
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 1})
-        sys.exit(1)
+        #try to destroy our node if any
+        try:
+            destroynode = driver.destroy_node(node)
+            sys.exit(1)
+        except:
+            sys.exit(1)
 
 
 
