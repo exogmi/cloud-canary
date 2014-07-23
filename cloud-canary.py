@@ -117,7 +117,8 @@ if __name__ == "__main__":
                      'metric': 1})
         #try to destroy our node if any
         try:
-            destroynode = driver.destroy_node(node)
+            #temp disable
+            #destroynode = driver.destroy_node(node)
             sys.exit(1)
         except:
             sys.exit(1)
