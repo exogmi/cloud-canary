@@ -111,7 +111,7 @@ if __name__ == "__main__":
         client.send({'host': host,
                      'service': "Cloud_canary.check",
                      'description': txt,
-                     'state': 'warning',
+                     'state': 'critical',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 1})
