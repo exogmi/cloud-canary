@@ -100,16 +100,16 @@ if __name__ == "__main__":
         client=bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         exectime = 61
-        txt = 'An exception occurred on api_canary.py: %s. See logfile %s for more info' % (e,logfile)
+        txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e,logfile)
         client.send({'host': host,
-                     'service': "api_canary.check",
+                     'service': "s3_canary.check",
                      'description': txt,
                      'state': 'warning',
-                     'tags': ['api_canary.py', 'duration'],
+                     'tags': ['s3_canary.py', 'duration'],
                      'ttl': 600,
                      'metric': 1})
         client.send({'host': host,
-                     'service': "api_canary.exectime",
+                     'service': "s3_canary.exectime",
                      'state': 'ok',
                      'tags': ['duration'],
                      'ttl': 600,
