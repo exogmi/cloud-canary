@@ -30,6 +30,7 @@ except ImportError:
 logfile = "/var/log/s3-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
+logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 class FailedtoReadTestFile(Exception):
     """Exception: Unable to read back the created test file"""
