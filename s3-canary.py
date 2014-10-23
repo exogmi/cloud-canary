@@ -32,7 +32,7 @@ logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s',
 logging.getLogger().addHandler(logging.StreamHandler())
 
 class FailedtoReadTestFile(Exception):
-    message = '\nException: Unable to read back the created test file'
+    """Exception: Unable to read back the created test file"""
 
 def main():
     parser = argparse.ArgumentParser(description='This script create a file, read it and delete it on a s3 compliant storage. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
@@ -66,7 +66,7 @@ def s3test(args):
     k.key = 's3-canary'
     k.set_contents_from_string('This is a test of S3')
 
-    if k.get_contents_as_string != "This is a test of S3":
+    if k.get_contents_as_string() != "This is a test of S3":
         raise FailedtoReadTestFile
 
     bucket.delete_key(k)
