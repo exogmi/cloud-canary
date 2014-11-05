@@ -60,7 +60,7 @@ def s3test(args):
         calling_format = boto.s3.connection.OrdinaryCallingFormat(),
         )
     
-    bucket = conn.get_bucket(BUCKET)
+    bucket = conn.create_bucket(BUCKET)
 
 
     k = Key(bucket)
