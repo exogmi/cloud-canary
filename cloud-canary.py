@@ -51,8 +51,8 @@ def deploy_instance(args):
     driver = cls(API_KEY, API_SECRET_KEY)
 	 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
-    image = [image for image in driver.list_images() if 'Ubuntu 14.04 LTS 64-bit'
-             in image.name][0]
+    image = [image for image in driver.list_images() if 'Linux Ubuntu 14.04 LTS 64-bit 10G'
+             in image.extra['displaytext']]
 	 
     name = 'canary-check'
 
