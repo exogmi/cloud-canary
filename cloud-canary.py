@@ -15,7 +15,8 @@ try:
     from libcloud.compute.types import Provider
     from libcloud.compute.providers import get_driver
     from libcloud.compute.deployment import ScriptDeployment
-    from libcloud.compute.deployment import MultiStepDeployment 
+    from libcloud.compute.deployment import MultiStepDeployment
+    from libcloud.compute.base import NodeImage
 except ImportError:
     print "It look like libcloud module isn't installed. Please install it using pip install apache-libcloud"
     sys.exit(1)
@@ -51,8 +52,12 @@ def deploy_instance(args):
     driver = cls(API_KEY, API_SECRET_KEY)
 	 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
-    image = [image for image in driver.list_images() if 'Linux Ubuntu 14.04 LTS 64-bit 10G'
-             in image.extra['displaytext']]
+    images = driver.list_images()
+
+    for i in images:
+        if 'Linux Ubuntu 14.04 LTS 64-bit 10G' in i.extra['displaytext']:
+        
+    image = NodeImage(id=i.id, name=i.name, driver=driver)
 	 
     name = 'canary-check'
 
