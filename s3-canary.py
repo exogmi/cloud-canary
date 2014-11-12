@@ -42,6 +42,7 @@ def main():
     parser.add_argument('-secret', help='S3 user secret', required=True, type=str, dest='secret')
     parser.add_argument('-host', help='S3 host', required=True, type=str, dest='host')
     parser.add_argument('-bucket', help='S3 bucket', required=True, type=str, dest='bucket')
+    parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
     parser.add_argument('-riemannhost', help='Riemann monitoring host', required=True, type=str, dest='RIEMANNHOST')
     args = vars(parser.parse_args())
     return args
@@ -76,6 +77,9 @@ def s3test(args):
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
+    ENV = args['env']
+    exectimeservice = "%s.s3_canary.exectime" % ENV
+    checkservice = "%s.s3_canary.check" % ENV
     start_time = time.time()
     try:
         s3test(args)
@@ -83,15 +87,15 @@ if __name__ == "__main__":
         client=bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "s3_canary.exectime",
+                     'service': exectimeservice,
                      'state': 'ok',
-                     'tags': ['duration'],
+                     'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': "s3_canary.check",
+                     'service': checkservice,
                      'state': 'ok',
-                     'tags': ['s3_canary.py', 'duration'],
+                     'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 0})
 
@@ -105,16 +109,16 @@ if __name__ == "__main__":
         exectime = 61
         txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e,logfile)
         client.send({'host': host,
-                     'service': "s3_canary.check",
+                     'service': exectimeservice,
                      'description': txt,
                      'state': 'critical',
-                     'tags': ['s3_canary.py', 'duration'],
+                     'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})
         client.send({'host': host,
-                     'service': "s3_canary.exectime",
+                     'service': checkservice,
                      'state': 'ok',
-                     'tags': ['duration'],
+                     'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
         sys.exit(1)
