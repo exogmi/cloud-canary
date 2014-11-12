@@ -57,7 +57,7 @@ def deploy_instance(args):
     for i in images:
         if 'Linux Ubuntu 14.04 LTS 64-bit 10G' in i.extra['displaytext']:
         
-    image = NodeImage(id=i.id, name=i.name, driver=driver)
+        image = NodeImage(id=i.id, name=i.name, driver=driver)
 	 
     name = 'canary-check'
 
