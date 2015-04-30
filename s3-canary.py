@@ -1,14 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#Loic Lambiel ©
+# Loic Lambiel ©
 # License MIT
 
-import sys, getopt, argparse
-import logging, logging.handlers
-import time
-from datetime import datetime, timedelta
-from pprint import pprint
 import sys
+import argparse
+import logging
+import logging.handlers
+import time
 import socket
 
 try:
@@ -18,7 +17,7 @@ try:
 except ImportError:
     print "It look like boto module isn't installed. Please install it using pip install boto"
     sys.exit(1)
- 
+
 
 try:
     import bernhard
@@ -28,12 +27,15 @@ except ImportError:
 
 
 logfile = "/var/log/s3-canary.log"
-logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
+logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
 logging.getLogger('boto').setLevel(logging.CRITICAL)
 
+
 class FailedtoReadTestFile(Exception):
+
     """Exception: Unable to read back the created test file"""
+
 
 def main():
     parser = argparse.ArgumentParser(description='This script create a file, read it and delete it on a s3 compliant storage. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
@@ -47,22 +49,21 @@ def main():
     args = vars(parser.parse_args())
     return args
 
- 
+
 def s3test(args):
     KEY = args['key']
     SECRET = args['secret']
     HOST = args['host']
     BUCKET = args['bucket']
-   
-    conn = boto.connect_s3(
-        aws_access_key_id = KEY,
-        aws_secret_access_key = SECRET,
-        host = HOST,
-        calling_format = boto.s3.connection.OrdinaryCallingFormat(),
-        )
-    
-    bucket = conn.create_bucket(BUCKET)
 
+    conn = boto.connect_s3(
+        aws_access_key_id=KEY,
+        aws_secret_access_key=SECRET,
+        host=HOST,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+    )
+
+    bucket = conn.create_bucket(BUCKET)
 
     k = Key(bucket)
     k.key = 's3-canary'
@@ -73,7 +74,7 @@ def s3test(args):
 
     bucket.delete_key(k)
 
-#main
+# main
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     try:
         s3test(args)
         exectime = time.time() - start_time
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
                      'service': checkservice,
@@ -102,12 +103,11 @@ if __name__ == "__main__":
         logging.info('Script completed successfully')
 
     except Exception as e:
-        pass
         logging.exception("An exception occured. Exception is: %s", e)
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         exectime = 61
-        txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e,logfile)
+        txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
                      'service': checkservice,
                      'description': txt,
@@ -121,6 +121,4 @@ if __name__ == "__main__":
                      'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
-        sys.exit(1)
-
-
+        raise

@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#Loic Lambiel ©
+# Loic Lambiel ©
 # License MIT
 
-import sys, getopt, argparse
-import logging, logging.handlers
-import time
-from datetime import datetime, timedelta
-from pprint import pprint
 import sys
+import argparse
+import logging
+import logging.handlers
+import time
+from pprint import pprint
 import socket
 
 try:
@@ -20,7 +20,7 @@ try:
 except ImportError:
     print "It look like libcloud module isn't installed. Please install it using pip install apache-libcloud"
     sys.exit(1)
- 
+
 
 try:
     import bernhard
@@ -30,7 +30,7 @@ except ImportError:
 
 
 logfile = "/var/log/cloud-canary.log"
-logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
+logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -43,49 +43,49 @@ def main():
     args = vars(parser.parse_args())
     return args
 
- 
+
 def deploy_instance(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY)
-	 
+
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
     images = driver.list_images()
 
     for i in images:
         if 'Linux Ubuntu 14.04 LTS 64-bit 10G' in i.extra['displaytext']:
-        
+
             image = NodeImage(id=i.id, name=i.name, driver=driver)
-	 
+
     name = 'canary-check'
 
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
 
     logging.info('Deploying instance %s', name)
-    
+
     node = driver.deploy_node(name=name, image=image, size=size,
-    			      max_tries=1,
-    			      deploy=msd)
+                              max_tries=1,
+                              deploy=msd)
 
     nodename = str(node.name)
     nodeid = str(node.uuid)
     nodeip = str(node.public_ips)
-    logging.info('Instance successfully deployed : %s, %s, %s', nodename,nodeid,nodeip)
+    logging.info('Instance successfully deployed : %s, %s, %s', nodename, nodeid, nodeip)
     # The stdout of the deployment can be checked on the `script` object
     pprint(script.stdout)
-    
+
     logging.info('Successfully executed echo command thru SSH')
     logging.info('Destroying the instance now')
     # destroy our canary node
-    destroynode = driver.destroy_node(node)
-    
+    driver.destroy_node(node)
+
     logging.info('Successfully destroyed the instance %s', name)
     logging.info('Script completed')
 
-#main
+# main
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     try:
         deploy_instance(args)
         exectime = time.time() - start_time
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
                      'service': "Cloud_canary.exectime",
@@ -108,11 +108,10 @@ if __name__ == "__main__":
                      'ttl': 3800,
                      'metric': 0})
     except Exception as e:
-        pass
         logging.exception("An exception occured. Exception is: %s", e)
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
-        txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e,logfile)
+        txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
                      'service': "Cloud_canary.check",
                      'description': txt,
@@ -120,14 +119,4 @@ if __name__ == "__main__":
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 1})
-        #try to destroy our node if any
-        try:
-            #temp disable
-            #destroynode = driver.destroy_node(node)
-            sys.exit(1)
-        except:
-            sys.exit(1)
-
-
-
-
+        raise

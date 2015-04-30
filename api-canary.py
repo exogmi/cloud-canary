@@ -1,14 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#Loic Lambiel ©
+# Loic Lambiel ©
 # License MIT
 
-import sys, getopt, argparse
-import logging, logging.handlers
-import time
-from datetime import datetime, timedelta
-from pprint import pprint
 import sys
+import argparse
+import logging
+import logging.handlers
+import time
 import socket
 
 try:
@@ -17,7 +16,7 @@ try:
 except ImportError:
     print "It look like libcloud module isn't installed. Please install it using pip install apache-libcloud"
     sys.exit(1)
- 
+
 
 try:
     import bernhard
@@ -27,7 +26,7 @@ except ImportError:
 
 
 logfile = "/var/log/api-canary.log"
-logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG,filename=logfile)
+logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
@@ -40,7 +39,7 @@ def main():
     args = vars(parser.parse_args())
     return args
 
- 
+
 def list_size(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
@@ -49,8 +48,8 @@ def list_size(args):
     driver = cls(API_KEY, API_SECRET_KEY)
 
     logging.info('Performing query')
-	 
-    size = driver.list_sizes() 
+
+    size = driver.list_sizes()
 
     micro = False
 
@@ -59,10 +58,10 @@ def list_size(args):
             micro = True
 
     if micro is False:
-        raise Exception ("API call did not returned Micro instance type. This means the API isn't working correctly")
- 
+        raise Exception("API call did not returned Micro instance type. This means the API isn't working correctly")
 
-#main
+
+# main
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
@@ -70,7 +69,7 @@ if __name__ == "__main__":
     try:
         list_size(args)
         exectime = time.time() - start_time
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
                      'service': "api_canary.exectime",
@@ -88,12 +87,11 @@ if __name__ == "__main__":
         logging.info('Script completed successfully')
 
     except Exception as e:
-        pass
         logging.exception("An exception occured. Exception is: %s", e)
-        client=bernhard.Client(host=RIEMANNHOST)
+        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         exectime = 61
-        txt = 'An exception occurred on api_canary.py: %s. See logfile %s for more info' % (e,logfile)
+        txt = 'An exception occurred on api_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
                      'service': "api_canary.check",
                      'description': txt,
@@ -107,6 +105,4 @@ if __name__ == "__main__":
                      'tags': ['duration'],
                      'ttl': 600,
                      'metric': exectime})
-        sys.exit(1)
-
-
+        raise
