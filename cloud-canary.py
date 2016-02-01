@@ -61,7 +61,7 @@ def deploy_instance(args):
 
             image = NodeImage(id=i.id, name=i.name, driver=driver)
 
-    name = 'canary-check'
+    name = 'canary-check-' + zoneid
 
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
