@@ -40,6 +40,7 @@ def main():
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
     parser.add_argument('-riemannhost', help='Riemann monitoring host', required=True, type=str, dest='RIEMANNHOST')
+    parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='RIEMANNHOST')
     args = vars(parser.parse_args())
     return args
 
@@ -47,6 +48,7 @@ def main():
 def deploy_instance(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
+    zoneid = args['-zoneid']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY)
@@ -66,7 +68,7 @@ def deploy_instance(args):
 
     logging.info('Deploying instance %s', name)
 
-    node = driver.deploy_node(name=name, image=image, size=size,
+    node = driver.deploy_node(name=name, image=image, size=size, zoneid=zoneid,
                               max_tries=1,
                               deploy=msd)
 
