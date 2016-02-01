@@ -40,7 +40,7 @@ def main():
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
     parser.add_argument('-riemannhost', help='Riemann monitoring host', required=True, type=str, dest='RIEMANNHOST')
-    parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='RIEMANNHOST')
+    parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='zoneid')
     args = vars(parser.parse_args())
     return args
 
