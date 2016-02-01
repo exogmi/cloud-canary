@@ -48,7 +48,7 @@ def main():
 def deploy_instance(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
-    zoneid = args['-zoneid']
+    zoneid = args['zoneid']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY)
