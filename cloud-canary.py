@@ -53,6 +53,8 @@ def deploy_instance(args):
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY)
 
+    location = [location for location in driver.list_locations() if location.id == zoneid][0]
+
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
     images = driver.list_images()
 
@@ -68,7 +70,7 @@ def deploy_instance(args):
 
     logging.info('Deploying instance %s', name)
 
-    node = driver.deploy_node(name=name, image=image, size=size, location=zoneid,
+    node = driver.deploy_node(name=name, image=image, size=size, location=location,
                               max_tries=1,
                               deploy=msd)
 
