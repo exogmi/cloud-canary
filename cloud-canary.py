@@ -68,7 +68,7 @@ def deploy_instance(args):
 
     logging.info('Deploying instance %s', name)
 
-    node = driver.deploy_node(name=name, image=image, size=size, zoneid=zoneid,
+    node = driver.deploy_node(name=name, image=image, size=size, location=zoneid,
                               max_tries=1,
                               deploy=msd)
 
@@ -91,6 +91,7 @@ def deploy_instance(args):
 if __name__ == "__main__":
     args = main()
     RIEMANNHOST = args['RIEMANNHOST']
+    zoneid = args['zoneid']
     start_time = time.time()
     try:
         deploy_instance(args)
@@ -98,13 +99,13 @@ if __name__ == "__main__":
         client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "Cloud_canary.exectime",
+                     'service': "Cloud_canary-" + zoneid + ".exectime",
                      'state': 'ok',
                      'tags': ['duration'],
                      'ttl': 3800,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': "Cloud_canary.check",
+                     'service': "Cloud_canary-" + zoneid + ".check",
                      'state': 'ok',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
@@ -115,7 +116,7 @@ if __name__ == "__main__":
         host = socket.gethostname()
         txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
-                     'service': "Cloud_canary.check",
+                     'service': "Cloud_canary-" + zoneid + ".check",
                      'description': txt,
                      'state': 'critical',
                      'tags': ['cloud_canary.py', 'duration'],
