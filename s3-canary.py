@@ -68,6 +68,7 @@ def s3test(args):
     k = Key(bucket)
     k.key = 's3-canary'
     k.set_contents_from_string('This is a test of S3')
+    time.sleep(1)
 
     if k.get_contents_as_string() != "This is a test of S3":
         raise FailedtoReadTestFile
