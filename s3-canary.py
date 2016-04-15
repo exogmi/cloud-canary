@@ -50,7 +50,6 @@ def main():
     parser.add_argument('-host', help='S3 host', required=True, type=str, dest='host')
     parser.add_argument('-bucket', help='S3 bucket', required=True, type=str, dest='bucket')
     parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
-    parser.add_argument('-riemannhost', help='Riemann monitoring host', required=True, type=str, dest='RIEMANNHOST')
     args = vars(parser.parse_args())
     return args
 
