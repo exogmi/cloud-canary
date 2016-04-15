@@ -26,6 +26,11 @@ except ImportError:
     sys.exit(1)
 
 
+try:
+    from configparser import ConfigParser
+except ImportError:  # python 2
+    from ConfigParser import ConfigParser
+
 logfile = "/var/log/s3-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -78,7 +83,14 @@ def s3test(args):
 # main
 if __name__ == "__main__":
     args = main()
-    RIEMANNHOST = args['RIEMANNHOST']
+    conf = ConfigParser()
+    conf.read(("/etc/bernhard.conf",))
+
+    client = bernhard.SSLClient(host=conf.get('default', 'riemann_server'),
+                                port=int(conf.get('default', 'riemann_port')),
+                                keyfile=conf.get('default', 'tls_cert_key'),
+                                certfile=conf.get('default', 'tls_cert'),
+                                ca_certs=conf.get('default', 'tls_ca_cert'))
     ENV = args['env']
     exectimeservice = "%s.s3_canary.exectime" % ENV
     checkservice = "%s.s3_canary.check" % ENV
@@ -86,7 +98,6 @@ if __name__ == "__main__":
     try:
         s3test(args)
         exectime = time.time() - start_time
-        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
                      'service': checkservice,
@@ -105,7 +116,6 @@ if __name__ == "__main__":
 
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
-        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         exectime = 61
         txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e, logfile)

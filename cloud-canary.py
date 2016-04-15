@@ -28,6 +28,10 @@ except ImportError:
     print "It look like riemann client (bernard) isn't installed. Please install it using pip install bernhard"
     sys.exit(1)
 
+try:
+    from configparser import ConfigParser
+except ImportError:  # python 2
+    from ConfigParser import ConfigParser
 
 logfile = "/var/log/cloud-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
@@ -92,13 +96,19 @@ def deploy_instance(args):
 # main
 if __name__ == "__main__":
     args = main()
-    RIEMANNHOST = args['RIEMANNHOST']
     zoneid = args['zoneid']
+    conf = ConfigParser()
+    conf.read(("/etc/bernhard.conf",))
+
+    client = bernhard.SSLClient(host=conf.get('default', 'riemann_server'),
+                                port=int(conf.get('default', 'riemann_port')),
+                                keyfile=conf.get('default', 'tls_cert_key'),
+                                certfile=conf.get('default', 'tls_cert'),
+                                ca_certs=conf.get('default', 'tls_ca_cert'))
     start_time = time.time()
     try:
         deploy_instance(args)
         exectime = time.time() - start_time
-        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         client.send({'host': host,
                      'service': "Cloud_canary-" + zoneid + ".exectime",
@@ -114,7 +124,6 @@ if __name__ == "__main__":
                      'metric': 0})
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
-        client = bernhard.Client(host=RIEMANNHOST)
         host = socket.gethostname()
         txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
