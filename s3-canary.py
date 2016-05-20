@@ -99,13 +99,13 @@ if __name__ == "__main__":
         exectime = time.time() - start_time
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': exectimeservice,
+                     'service': checkservice,
                      'state': 'ok',
                      'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': checkservice,
+                     'service': exectimeservice,
                      'state': 'ok',
                      'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
@@ -119,14 +119,14 @@ if __name__ == "__main__":
         exectime = 61
         txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
-                     'service': exectimeservice,
+                     'service': checkservice,
                      'description': txt,
                      'state': 'critical',
                      'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})
         client.send({'host': host,
-                     'service': checkservice,
+                     'service': exectimeservice,
                      'state': 'ok',
                      'tags': ['duration', ENV],
                      'ttl': 600,
