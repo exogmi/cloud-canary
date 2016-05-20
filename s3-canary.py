@@ -99,13 +99,13 @@ if __name__ == "__main__":
         exectime = time.time() - start_time
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': checkservice,
+                     'service': exectimeservice,
                      'state': 'ok',
                      'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': exectimeservice,
+                     'service': checkservice,
                      'state': 'ok',
                      'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
