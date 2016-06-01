@@ -18,14 +18,14 @@ try:
     from libcloud.compute.deployment import MultiStepDeployment
     from libcloud.compute.base import NodeImage
 except ImportError:
-    print "It look like libcloud module isn't installed. Please install it using pip install apache-libcloud"
+    print ("It look like libcloud module isn't installed. Please install it using pip install apache-libcloud")
     sys.exit(1)
 
 
 try:
     import bernhard
 except ImportError:
-    print "It look like riemann client (bernard) isn't installed. Please install it using pip install bernhard"
+    print ("It look like riemann client (bernard) isn't installed. Please install it using pip install bernhard")
     sys.exit(1)
 
 try:
