@@ -57,6 +57,7 @@ if __name__ == "__main__":
                                 certfile=conf.get('default', 'tls_cert'),
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
     ENV = args['env']
+    checkservice = "%s.download_canary.check" % ENV
     exectimeservice = "%s.download_canary.exectime" % ENV
     start_time = time.time()
     host = socket.gethostname()
@@ -69,6 +70,12 @@ if __name__ == "__main__":
                      'tags': ['duration', ENV],
                      'ttl': 600,
                      'metric': exectime})
+        client.send({'host': host,
+                     'service': checkservice,
+                     'state': 'ok',
+                     'tags': ['download_canary.py', 'duration', ENV],
+                     'ttl': 600,
+                     'metric': 0})
 
         logging.info('Script completed successfully')
 
@@ -77,10 +84,16 @@ if __name__ == "__main__":
         exectime = 61
         txt = 'An exception occurred on download_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
-                     'service': exectimeservice,
+                     'service': checkservice,
                      'description': txt,
                      'state': 'critical',
                      'tags': ['download_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})
+        client.send({'host': host,
+                     'service': exectimeservice,
+                     'state': 'ok',
+                     'tags': ['duration', ENV],
+                     'ttl': 600,
+                     'metric': exectime})
         raise
