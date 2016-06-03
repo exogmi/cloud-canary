@@ -9,7 +9,7 @@ import logging
 import logging.handlers
 import time
 import socket
-import urllib.request
+import urllib
 
 
 try:
@@ -33,7 +33,7 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 def main():
     parser = argparse.ArgumentParser(description='This script create download a small file from a given URL. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
     parser.add_argument('-version', action='version', version='%(prog)s 1.0, Loic Lambiel, exoscale')
-    parser.add_argument('-url', help='S3 user key', required=True, type=str, dest='key')
+    parser.add_argument('-url', help='URL of the file to be downloaded', required=True, type=str, dest='url')
     parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
     args = vars(parser.parse_args())
     return args
@@ -42,7 +42,7 @@ def main():
 def downloadtest(args):
     URL = args['url']
 
-    response = urllib.request.urlopen(URL)
+    response = urllib.urlopen(URL)
     response.read()
 
 # main
@@ -59,10 +59,10 @@ if __name__ == "__main__":
     ENV = args['env']
     exectimeservice = "%s.download_canary.exectime" % ENV
     start_time = time.time()
+    host = socket.gethostname()
     try:
         downloadtest(args)
         exectime = time.time() - start_time
-        host = socket.gethostname()
         client.send({'host': host,
                      'service': exectimeservice,
                      'state': 'ok',
@@ -74,14 +74,13 @@ if __name__ == "__main__":
 
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
-        host = socket.gethostname()
         exectime = 61
         txt = 'An exception occurred on download_canary.py: %s. See logfile %s for more info' % (e, logfile)
         client.send({'host': host,
                      'service': exectimeservice,
                      'description': txt,
                      'state': 'critical',
-                     'tags': ['s3_canary.py', 'duration', ENV],
+                     'tags': ['download_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})
         raise
