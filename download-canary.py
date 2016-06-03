@@ -24,7 +24,7 @@ try:
 except ImportError:  # python 2
     from ConfigParser import ConfigParser
 
-logfile = "/var/log/s3-canary.log"
+logfile = "/var/log/download-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
 logging.getLogger('boto').setLevel(logging.CRITICAL)
