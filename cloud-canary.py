@@ -62,7 +62,7 @@ def deploy_instance(args):
     images = driver.list_images()
 
     for i in images:
-        if 'Linux Ubuntu 14.04 LTS 64-bit 10G' in i.extra['displaytext']:
+        if 'Linux Ubuntu 16.04 LTS 64-bit 10G' in i.extra['displaytext']:
 
             image = NodeImage(id=i.id, name=i.name, driver=driver)
 
