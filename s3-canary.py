@@ -85,7 +85,7 @@ def s3test(args):
     try:
         if k.get_contents_as_string() != "This is a test of S3":
             raise FailedtoReadTestFile
-    except S3ResponseError as e:
+    except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
         logging.info('Sleep 5s before retry')
         time.sleep(5)
