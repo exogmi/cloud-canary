@@ -34,7 +34,7 @@ except ImportError:  # python 2
 logfile = "/var/log/s3-canary.log"
 logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
 logging.getLogger().addHandler(logging.StreamHandler())
-logging.getLogger('boto').setLevel(logging.CRITICAL)
+logging.getLogger('boto').setLevel(logging.DEBUG)
 
 
 class FailedtoReadTestFile(Exception):
@@ -74,8 +74,15 @@ def s3test(args):
     k.set_contents_from_string('This is a test of S3')
     time.sleep(1)
 
-    if k.get_contents_as_string() != "This is a test of S3":
-        raise FailedtoReadTestFile
+    try:
+        if k.get_contents_as_string() != "This is a test of S3":
+            raise FailedtoReadTestFile
+    except S3ResponseError as e:
+        logging.exception("An exception occured. Exception is: %s", e)
+        logging.info('Sleep 5s before retry')
+        time.sleep(5)
+        if k.get_contents_as_string() != "This is a test of S3":
+            raise FailedtoReadTestFile
 
     bucket.delete_key(k)
 
