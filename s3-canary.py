@@ -72,7 +72,7 @@ def s3test(args):
 
     logging.info('Creating bucket %s', BUCKET)
     bucket = conn.create_bucket(BUCKET)
-    logging.info('Bucket %s' created, BUCKET)
+    logging.info('Bucket created')
 
     k = Key(bucket)
     k.key = 's3-canary'
