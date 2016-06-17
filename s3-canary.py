@@ -59,6 +59,9 @@ def s3test(args):
     SECRET = args['secret']
     HOST = args['host']
     BUCKET = args['bucket']
+    ENV = args['env']
+
+    logging.info('Test started for env %s', ENV)
 
     conn = boto.connect_s3(
         aws_access_key_id=KEY,
@@ -67,12 +70,17 @@ def s3test(args):
         calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
 
+    logging.info('Creating bucket %s', BUCKET)
     bucket = conn.create_bucket(BUCKET)
+    logging.info('Bucket %s' created, BUCKET)
 
     k = Key(bucket)
     k.key = 's3-canary'
+    logging.info('Writing file')
     k.set_contents_from_string('This is a test of S3')
+    logging.info('Write done')
     time.sleep(1)
+    logging.info('Reading back the file')
 
     try:
         if k.get_contents_as_string() != "This is a test of S3":
@@ -84,7 +92,10 @@ def s3test(args):
         if k.get_contents_as_string() != "This is a test of S3":
             raise FailedtoReadTestFile
 
+    logging.info('File has been read back')
+    logging.info('Deleting bucket')
     bucket.delete_key(k)
+    logging.info('Bucket deleted')
 
 # main
 if __name__ == "__main__":
