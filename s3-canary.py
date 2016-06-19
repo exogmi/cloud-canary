@@ -37,9 +37,10 @@ logging.getLogger().addHandler(logging.StreamHandler())
 logging.getLogger('boto').setLevel(logging.DEBUG)
 
 
-class FailedtoReadTestFile(Exception):
+class CustomError(Exception):
 
-    """Exception: Unable to read back the created test file"""
+    def __init__(self, arg):
+        self.msg = arg
 
 
 def main():
@@ -84,13 +85,13 @@ def s3test(args):
 
     try:
         if k.get_contents_as_string() != "This is a test of S3":
-            raise FailedtoReadTestFile
+            raise CustomError('Failed to read back the created file !')
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
         logging.info('Sleep 5s before retry')
         time.sleep(5)
         if k.get_contents_as_string() != "This is a test of S3":
-            raise FailedtoReadTestFile
+            raise CustomError('Failed to read back the created file !')
 
     logging.info('File has been read back')
     logging.info('Deleting bucket')
