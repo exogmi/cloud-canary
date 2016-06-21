@@ -41,16 +41,22 @@ def main():
 
 def downloadtest(args):
     URL = args['url']
+    ENV = args['env']
 
     timeout = 30
     socket.setdefaulttimeout(timeout)
 
+    logging.info('Downloading file for env %s', ENV)
+
     response = urllib.urlopen(URL)
     response.read()
+
+    logging.info('Download completed for env %s', ENV)
 
 # main
 if __name__ == "__main__":
     args = main()
+    ENV = args['env']
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
 
@@ -59,7 +65,8 @@ if __name__ == "__main__":
                                 keyfile=conf.get('default', 'tls_cert_key'),
                                 certfile=conf.get('default', 'tls_cert'),
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
-    ENV = args['env']
+
+    logging.info('Test started for env %s', ENV)
     checkservice = "%s.download_canary.check" % ENV
     exectimeservice = "%s.download_canary.exectime" % ENV
     start_time = time.time()
