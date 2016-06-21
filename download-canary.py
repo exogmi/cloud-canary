@@ -42,7 +42,10 @@ def main():
 def downloadtest(args):
     URL = args['url']
 
-    response = urllib.urlopen(URL, timeout=45)
+    timeout = 30
+    socket.setdefaulttimeout(timeout)
+
+    response = urllib.urlopen(URL)
     response.read()
 
 # main
