@@ -73,30 +73,23 @@ def s3test(args):
 
     logging.info('Creating bucket %s', BUCKET)
     bucket = conn.create_bucket(BUCKET)
-    logging.info('Bucket created')
+    logging.info('Bucket create for env %s', ENV)
 
     k = Key(bucket)
     k.key = 's3-canary'
     logging.info('Writing file')
     k.set_contents_from_string('This is a test of S3')
-    logging.info('Write done')
+    logging.info('Write done for env %s', ENV)
     time.sleep(1)
-    logging.info('Reading back the file')
+    logging.info('Reading back the file for env %s', ENV)
 
-    try:
-        if k.get_contents_as_string() != "This is a test of S3":
-            raise CustomError('Failed to read back the created file !')
-    except Exception as e:
-        logging.exception("An exception occured. Exception is: %s", e)
-        logging.info('Sleep 5s before retry')
-        time.sleep(5)
-        if k.get_contents_as_string() != "This is a test of S3":
-            raise CustomError('Failed to read back the created file !')
+    if k.get_contents_as_string() != "This is a test of S3":
+        raise CustomError('Failed to read back the created file !')
 
-    logging.info('File has been read back')
-    logging.info('Deleting bucket')
+    logging.info('File has been read back for env %s', ENV)
+    logging.info('Deleting bucket for env %s', ENV)
     bucket.delete_key(k)
-    logging.info('Bucket deleted')
+    logging.info('Bucket deleted for env %s', ENV)
 
 # main
 if __name__ == "__main__":
@@ -130,7 +123,7 @@ if __name__ == "__main__":
                      'ttl': 600,
                      'metric': 0})
 
-        logging.info('Script completed successfully')
+        logging.info('Script completed successfully for env %s', ENV)
 
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
