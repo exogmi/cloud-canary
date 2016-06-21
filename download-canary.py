@@ -42,7 +42,7 @@ def main():
 def downloadtest(args):
     URL = args['url']
 
-    response = urllib.urlopen(URL)
+    response = urllib.urlopen(URL, timeout=45)
     response.read()
 
 # main
