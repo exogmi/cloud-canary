@@ -87,7 +87,7 @@ if __name__ == "__main__":
                      'ttl': 600,
                      'metric': 0})
 
-        logging.info('Script completed successfully')
+        logging.info('Script completed successfully for env %s', ENV)
 
     except Exception as e:
         logging.exception("An exception occured. Exception is: %s", e)
