@@ -34,6 +34,7 @@ def main():
     parser = argparse.ArgumentParser(description='This script create download a small file from a given URL. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
     parser.add_argument('-version', action='version', version='%(prog)s 1.0, Loic Lambiel, exoscale')
     parser.add_argument('-url', help='URL of the file to be downloaded', required=True, type=str, dest='url')
+    parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
     parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
     args = vars(parser.parse_args())
     return args
@@ -67,6 +68,8 @@ if __name__ == "__main__":
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
 
     logging.info('Test started for env %s', ENV)
+    ENV = args['env']
+    state = args['state']
     checkservice = "%s.download_canary.check" % ENV
     exectimeservice = "%s.download_canary.exectime" % ENV
     start_time = time.time()
@@ -96,7 +99,7 @@ if __name__ == "__main__":
         client.send({'host': host,
                      'service': checkservice,
                      'description': txt,
-                     'state': 'critical',
+                     'state': state,
                      'tags': ['download_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})

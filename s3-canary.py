@@ -51,6 +51,7 @@ def main():
     parser.add_argument('-host', help='S3 host', required=True, type=str, dest='host')
     parser.add_argument('-bucket', help='S3 bucket', required=True, type=str, dest='bucket')
     parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
+    parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
     args = vars(parser.parse_args())
     return args
 
@@ -103,6 +104,7 @@ if __name__ == "__main__":
                                 certfile=conf.get('default', 'tls_cert'),
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
     ENV = args['env']
+    state = args['state']
     exectimeservice = "%s.s3_canary.exectime" % ENV
     checkservice = "%s.s3_canary.check" % ENV
     start_time = time.time()
@@ -133,7 +135,7 @@ if __name__ == "__main__":
         client.send({'host': host,
                      'service': checkservice,
                      'description': txt,
-                     'state': 'critical',
+                     'state': state,
                      'tags': ['s3_canary.py', 'duration', ENV],
                      'ttl': 600,
                      'metric': 1})

@@ -44,6 +44,7 @@ def main():
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
     parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='zoneid')
+    parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
     args = vars(parser.parse_args())
     return args
 
@@ -96,6 +97,7 @@ def deploy_instance(args):
 if __name__ == "__main__":
     args = main()
     zoneid = args['zoneid']
+    state = args['state']
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
 
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         client.send({'host': host,
                      'service': "Cloud_canary-" + zoneid + ".check",
                      'description': txt,
-                     'state': 'critical',
+                     'state': state,
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 1})
