@@ -9,7 +9,7 @@ import logging
 import logging.handlers
 import time
 import socket
-import urllib
+import urllib2
 
 
 try:
@@ -49,7 +49,7 @@ def downloadtest(args):
 
     logging.info('Downloading file for env %s', ENV)
 
-    response = urllib.urlopen(URL)
+    response = urllib2.Request(URL)
     response.read()
 
     logging.info('Download completed for env %s', ENV)
