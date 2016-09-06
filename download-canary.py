@@ -49,7 +49,8 @@ def downloadtest(args):
 
     logging.info('Downloading file for env %s', ENV)
 
-    response = urllib2.Request(URL)
+    req = urllib2.Request(URL)
+    response = urllib2.urlopen(req)
     response.read()
 
     logging.info('Download completed for env %s', ENV)
