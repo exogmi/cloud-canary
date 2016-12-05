@@ -45,6 +45,7 @@ def main():
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
     parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='zoneid')
     parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
+    parser.add_argument('-endpoint', help='The API endpoint', required=False, type=str, default='api.exoscale.ch', dest='endpoint')
     args = vars(parser.parse_args())
     return args
 
@@ -53,9 +54,10 @@ def deploy_instance(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
     zoneid = args['zoneid']
+    endpoint = args['endpoint']
 
     cls = get_driver(Provider.EXOSCALE)
-    driver = cls(API_KEY, API_SECRET_KEY)
+    driver = cls(API_KEY, API_SECRET_KEY, host=endpoint)
 
     location = [location for location in driver.list_locations() if location.id == zoneid][0]
 
