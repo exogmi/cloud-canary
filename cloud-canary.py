@@ -43,7 +43,7 @@ def main():
     parser.add_argument('-version', action='version', version='%(prog)s 1.0, Loic Lambiel, exoscale')
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
-    parser.add_argument('-zoneid', help='Cloudstack zoneid', required=True, type=str, dest='zoneid')
+    parser.add_argument('-zone', help='Cloudstack zoneid', required=True, type=str, dest='zonename')
     parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
     parser.add_argument('-endpoint', help='The API endpoint', required=False, type=str, default='api.exoscale.ch', dest='endpoint')
     args = vars(parser.parse_args())
@@ -53,13 +53,13 @@ def main():
 def deploy_instance(args):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
-    zoneid = args['zoneid']
+    zonename = args['zonename']
     endpoint = args['endpoint']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY, host=endpoint)
 
-    location = [location for location in driver.list_locations() if location.id == zoneid][0]
+    location = [location for location in driver.list_locations() if location.name == zonename][0]
 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
     images = driver.list_images()
@@ -69,7 +69,7 @@ def deploy_instance(args):
 
             image = NodeImage(id=i.id, name=i.name, driver=driver)
 
-    name = 'canary-check-' + zoneid
+    name = 'canary-check-' + zonename
 
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
