@@ -3,30 +3,21 @@
 # Loic Lambiel ©
 # License MIT
 
-import sys
 import argparse
 import logging
 import logging.handlers
 import time
-from pprint import pprint
 import socket
+import uuid
 
-try:
-    from libcloud.compute.types import Provider
-    from libcloud.compute.providers import get_driver
-    from libcloud.compute.deployment import ScriptDeployment
-    from libcloud.compute.deployment import MultiStepDeployment
-    from libcloud.compute.base import NodeImage
-except ImportError:
-    print ("It look like libcloud module isn't installed. Please install it using pip install apache-libcloud")
-    sys.exit(1)
+import bernhard
 
-
-try:
-    import bernhard
-except ImportError:
-    print ("It look like riemann client (bernard) isn't installed. Please install it using pip install bernhard")
-    sys.exit(1)
+from libcloud.compute.types import Provider
+from libcloud.compute.providers import get_driver
+from libcloud.compute.deployment import ScriptDeployment
+from libcloud.compute.deployment import MultiStepDeployment
+from libcloud.compute.base import NodeImage
+from pythonjsonlogger import jsonlogger
 
 try:
     from configparser import ConfigParser
@@ -34,8 +25,14 @@ except ImportError:  # python 2
     from ConfigParser import ConfigParser
 
 logfile = "/var/log/cloud-canary.log"
-logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
-logging.getLogger().addHandler(logging.StreamHandler())
+
+logger = logging.getLogger()
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter()
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+logger.basicConfig(level=logging.DEBUG, filename=logfile)
+uuid = str(uuid.uuid1())
 
 
 def main():
@@ -44,20 +41,29 @@ def main():
     parser.add_argument('-acskey', help='Cloudstack API user key', required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret', required=True, type=str, dest='acssecret')
     parser.add_argument('-zone', help='Cloudstack zoneid', required=True, type=str, dest='zonename')
+    parser.add_argument('-env', help='Environement ex. Prod', required=True, type=str, dest='env')
     parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
     parser.add_argument('-endpoint', help='The API endpoint', required=False, type=str, default='api.exoscale.ch', dest='endpoint')
     args = vars(parser.parse_args())
     return args
 
 
-def deploy_instance(args):
+def deploy_instance(args, d):
     API_KEY = args['acskey']
     API_SECRET_KEY = args['acssecret']
     zonename = args['zonename']
     endpoint = args['endpoint']
+    env = args['env']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY, host=endpoint)
+
+    name = 'canary-check-' + zonename + env
+
+    ex_userdata = '''#cloud-config
+    manage_etc_hosts: true
+    fqdn: %s
+    ''' % (name)
 
     location = [location for location in driver.list_locations() if location.name == zonename][0]
 
@@ -69,37 +75,39 @@ def deploy_instance(args):
 
             image = NodeImage(id=i.id, name=i.name, driver=driver)
 
-    name = 'canary-check-' + zonename
-
-    script = ScriptDeployment('echo Iam alive !')
+    script = ScriptDeployment('cat /etc/hostname')
     msd = MultiStepDeployment([script])
 
-    logging.info('Deploying instance %s', name)
+    logger.info('Deploying instance %s', name)
 
     node = driver.deploy_node(name=name, image=image, size=size, location=location,
-                              max_tries=1,
+                              max_tries=1, userdata=ex_userdata,
                               deploy=msd)
 
-    nodename = str(node.name)
-    nodeid = str(node.uuid)
-    nodeip = str(node.public_ips)
-    logging.info('Instance successfully deployed : %s, %s, %s', nodename, nodeid, nodeip)
+    d['nodename'] = str(node.name)
+    d['nodeid'] = str(node.uuid)
+    d['nodeip'] = str(node.public_ips)
+    d['nodepassword'] = str(node.password)
+    logger.info('Instance successfully deployed : %s, %s, %s, %s', d['nodename'], d['nodeid'], d['nodeip'], d['nodepassword'])
     # The stdout of the deployment can be checked on the `script` object
-    pprint(script.stdout)
+    if not d['nodename'] == script.stdout:
+        raise Exception('Node hostname does not match. there might be an issue with metadata serivce')
 
-    logging.info('Successfully executed echo command thru SSH')
-    logging.info('Destroying the instance now')
+    logger.info('Successfully checked node hostname')
+    logger.info('Destroying the instance now')
     # destroy our canary node
     driver.destroy_node(node)
 
-    logging.info('Successfully destroyed the instance %s', name)
-    logging.info('Script completed')
+    logger.info('Successfully destroyed the instance %s', name)
+    logger.info('Script completed')
 
 # main
 if __name__ == "__main__":
     args = main()
-    zoneid = args['zoneid']
+    d = {}
+    zonename = args['zonename']
     state = args['state']
+    env = args['env']
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
 
@@ -110,27 +118,27 @@ if __name__ == "__main__":
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
     start_time = time.time()
     try:
-        deploy_instance(args)
+        deploy_instance(args, d)
         exectime = time.time() - start_time
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".exectime",
+                     'service': "Cloud_canary-" + zonename + env + ".exectime",
                      'state': 'ok',
                      'tags': ['duration'],
                      'ttl': 3800,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".check",
+                     'service': "Cloud_canary-" + zonename + env + ".check",
                      'state': 'ok',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
                      'metric': 0})
     except Exception as e:
-        logging.exception("An exception occured. Exception is: %s", e)
-        host = socket.gethostname()
-        txt = 'An exception occurred on cloud_canary.py: %s. See logfile %s for more info' % (e, logfile)
+        logger.exception("An exception occured. Exception is: %s", e)
+        host = socket.gethostname
+        txt = '%s | nodename = %s nodeid = %s nodeip = %s nodepassword = %s' % (e, d['nodename'], d['nodeid'], d['nodeip'], d['nodepassword'])
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".check",
+                     'service': "Cloud_canary-" + zonename + env + ".check",
                      'description': txt,
                      'state': state,
                      'tags': ['cloud_canary.py', 'duration'],
