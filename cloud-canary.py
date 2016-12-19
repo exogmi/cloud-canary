@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Loic Lambiel ©
 # License MIT
@@ -31,7 +31,7 @@ logHandler = logging.StreamHandler()
 formatter = jsonlogger.JsonFormatter()
 logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
-logger.basicConfig(level=logging.DEBUG, filename=logfile)
+# logger.basicConfig(level=logging.DEBUG, filename=logfile)
 uuid = str(uuid.uuid1())
 
 
@@ -58,14 +58,14 @@ def deploy_instance(args, d):
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(API_KEY, API_SECRET_KEY, host=endpoint)
 
-    name = 'canary-check-' + zonename + env
+    name = 'canary-check-' + zonename + '-%s' % env
 
     ex_userdata = '''#cloud-config
     manage_etc_hosts: true
     fqdn: %s
     ''' % (name)
 
-    location = [location for location in driver.list_locations() if location.name == zonename][0]
+    location = [location for location in driver.list_locations() if location.name == zonename]
 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
     images = driver.list_images()
@@ -85,12 +85,12 @@ def deploy_instance(args, d):
                               deploy=msd)
 
     d['nodename'] = str(node.name)
-    d['nodeid'] = str(node.uuid)
+    d['nodeuuid'] = str(node.uuid)
     d['nodeip'] = str(node.public_ips)
-    d['nodepassword'] = str(node.password)
-    logger.info('Instance successfully deployed : %s, %s, %s, %s', d['nodename'], d['nodeid'], d['nodeip'], d['nodepassword'])
+    d['nodepassword'] = str(node.extra['password'])
+    logger.info('Instance successfully deployed : %s, %s, %s, %s', d['nodename'], d['nodeuuid'], d['nodeip'], d['nodepassword'])
     # The stdout of the deployment can be checked on the `script` object
-    if not d['nodename'] == script.stdout:
+    if not d['nodename'] in script.stdout:
         raise Exception('Node hostname does not match. there might be an issue with metadata serivce')
 
     logger.info('Successfully checked node hostname')
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.exception("An exception occured. Exception is: %s", e)
         host = socket.gethostname
-        txt = '%s | nodename = %s nodeid = %s nodeip = %s nodepassword = %s' % (e, d['nodename'], d['nodeid'], d['nodeip'], d['nodepassword'])
+        txt = '%s | nodename = %s nodeuuid = %s nodeip = %s nodepassword = %s' % (e, d['nodename'], d['nodeuuid'], d['nodeip'], d['nodepassword'])
         client.send({'host': host,
                      'service': "Cloud_canary-" + zonename + env + ".check",
                      'description': txt,
