@@ -77,7 +77,6 @@ def deploy_instance(args):
     logging.info('Deploying instance %s', name)
 
     node = driver.deploy_node(name=name, image=image, size=size, location=location,
-                              max_tries=1,
                               deploy=msd)
 
     nodename = str(node.name)
