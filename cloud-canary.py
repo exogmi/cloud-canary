@@ -62,12 +62,10 @@ def deploy_instance(args):
     location = [location for location in driver.list_locations() if location.id == zoneid][0]
 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
-    images = driver.list_images()
-
-    for i in images:
-        if 'Linux Ubuntu 16.04 LTS 64-bit 10G' in i.extra['displaytext']:
-
-            image = NodeImage(id=i.id, name=i.name, driver=driver)
+    images = [i for i in driver.list_images()
+              if 'Linux Ubuntu 16.04 LTS 64-bit 10G' in i.extra['displaytext']]
+    images = sorted(images, key=lambda i: i.extra['displaytext'], reverse=True)
+    image = NodeImage(id=images[0].id, name=images[0].name, driver=driver)
 
     name = 'canary-check-' + zoneid
 
