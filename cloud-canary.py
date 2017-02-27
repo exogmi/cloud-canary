@@ -55,8 +55,8 @@ sent to riemann monitoring''')
                         required=True, type=str, dest='acskey')
     parser.add_argument('-acssecret', help='Cloudstack API user secret',
                         required=True, type=str, dest='acssecret')
-    parser.add_argument('-zoneid', help='Cloudstack zone id', required=True,
-                        type=str, dest='zoneid')
+    parser.add_argument('-zonename', help='Cloudstack zone name',
+                        required=True, type=str, dest='zonename')
     parser.add_argument('-alertstate',
                         help='Alert state to raise if the test fails',
                         required=False, type=str, default='critical',
@@ -67,10 +67,25 @@ sent to riemann monitoring''')
     return args
 
 
+def get_zone_id(args):
+    api_key = args['acskey']
+    secret_key = args['acssecret']
+    zonename = args['zonename']
+    endpoint = args['endpoint']
+
+    cls = get_driver(Provider.EXOSCALE)
+    driver = cls(api_key, secret_key, host=endpoint)
+
+    location = [location for location in driver.list_locations()
+                if location.name == zonename][0]
+
+    return location.id
+
+
 def deploy_instance(args):
     api_key = args['acskey']
     secret_key = args['acssecret']
-    zoneid = args['zoneid']
+    zonename = args['zonename']
     endpoint = args['endpoint']
 
     cls = get_driver(Provider.EXOSCALE)
@@ -79,7 +94,7 @@ def deploy_instance(args):
     prod = '//api.exoscale.ch' in endpoint
 
     location = [location for location in driver.list_locations()
-                if location.id == zoneid][0]
+                if location.id == zonename][0]
 
     size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
     images = [i for i in driver.list_images()
@@ -117,7 +132,7 @@ def deploy_instance(args):
 # main
 if __name__ == "__main__":
     args = main()
-    zoneid = args['zoneid']
+    zonename = args['zonename']
     state = args['state']
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
@@ -133,13 +148,13 @@ if __name__ == "__main__":
         exectime = time.time() - start_time
         host = socket.gethostname()
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".exectime",
+                     'service': "Cloud_canary-" + zonename + ".exectime",
                      'state': 'ok',
                      'tags': ['duration'],
                      'ttl': 3800,
                      'metric': exectime})
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".check",
+                     'service': "Cloud_canary-" + zonename + ".check",
                      'state': 'ok',
                      'tags': ['cloud_canary.py', 'duration'],
                      'ttl': 3800,
@@ -150,7 +165,7 @@ if __name__ == "__main__":
         txt = ("An exception occurred on cloud_canary.py: {}. See logfile {} "
                "for more info").format(e, logfile)
         client.send({'host': host,
-                     'service': "Cloud_canary-" + zoneid + ".check",
+                     'service': "Cloud_canary-" + zonename + ".check",
                      'description': txt,
                      'state': state,
                      'tags': ['cloud_canary.py', 'duration'],
