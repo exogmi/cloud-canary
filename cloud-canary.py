@@ -63,6 +63,16 @@ sent to riemann monitoring''')
                         dest='state')
     parser.add_argument('-endpoint', help='The API endpoint', required=False,
                         type=str, default='api.exoscale.ch', dest='endpoint')
+    parser.add_argument('-template',
+                        help='Template name to use for the deployment',
+                        required=False, type=str,
+                        default='Linux Ubuntu 16.04 LTS 64-bit 10G',
+                        dest='template')
+    parser.add_argument('-offering',
+                        help='Service offering to use for the deployment',
+                        required=False, type=str,
+                        default='Micro',
+                        dest='offering')
     args = vars(parser.parse_args())
     return args
 
@@ -87,6 +97,8 @@ def deploy_instance(args):
     secret_key = args['acssecret']
     zonename = args['zonename']
     endpoint = args['endpoint']
+    template = args['template']
+    offering = args['offering']
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(api_key, secret_key, host=endpoint)
@@ -94,9 +106,9 @@ def deploy_instance(args):
     location = [location for location in driver.list_locations()
                 if location.name == zonename][0]
 
-    size = [size for size in driver.list_sizes() if size.name == 'Micro'][0]
+    size = [size for size in driver.list_sizes() if size.name == offering][0]
     images = [i for i in driver.list_images()
-              if 'Linux Ubuntu 16.04 LTS 64-bit 10G' in i.extra['displaytext']]
+              if template in i.extra['displaytext']]
     images = sorted(images, key=lambda i: i.extra['displaytext'], reverse=True)
     image = NodeImage(id=images[0].id, name=images[0].name, driver=driver)
 
