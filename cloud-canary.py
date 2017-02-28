@@ -77,21 +77,6 @@ sent to riemann monitoring''')
     return args
 
 
-def get_zone_id(args):
-    api_key = args['acskey']
-    secret_key = args['acssecret']
-    zonename = args['zonename']
-    endpoint = args['endpoint']
-
-    cls = get_driver(Provider.EXOSCALE)
-    driver = cls(api_key, secret_key, host=endpoint)
-
-    location = [location for location in driver.list_locations()
-                if location.name == zonename][0]
-
-    return location.id
-
-
 def deploy_instance(args):
     api_key = args['acskey']
     secret_key = args['acssecret']
