@@ -97,11 +97,9 @@ def deploy_instance(args):
     images = sorted(images, key=lambda i: i.extra['displaytext'], reverse=True)
     image = NodeImage(id=images[0].id, name=images[0].name, driver=driver)
 
-    prod = '//api.exoscale.ch' in endpoint
-
     name = 'canary-check-' + location.name.lower()
 
-    if not prod:
+    if '//api.exoscale.ch' not in endpoint:
         name += '-pp'
 
     script = ScriptDeployment('echo Iam alive !')
