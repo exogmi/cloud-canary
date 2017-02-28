@@ -99,7 +99,7 @@ def deploy_instance(args):
 
     name = 'canary-check-' + location.name.lower()
 
-    if '//api.exoscale.ch' not in endpoint:
+    if endpoint != 'api.exoscale.ch':
         name += '-pp'
 
     script = ScriptDeployment('echo Iam alive !')
