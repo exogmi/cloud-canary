@@ -89,17 +89,17 @@ def deploy_instance(args):
     driver = cls(api_key, secret_key, host=endpoint)
 
     location = [location for location in driver.list_locations()
-                if location.name == zonename][0]
+                if location.name.lower() == zonename.lower()][0]
 
     size = [size for size in driver.list_sizes() if size.name == offering][0]
     images = [i for i in driver.list_images()
-              if template in i.extra['displaytext']]
+              if template.lower() in i.extra['displaytext'].lower()]
     images = sorted(images, key=lambda i: i.extra['displaytext'], reverse=True)
     image = NodeImage(id=images[0].id, name=images[0].name, driver=driver)
 
     prod = '//api.exoscale.ch' in endpoint
 
-    name = 'canary-check-' + location.name + '' if prod else '-pp'
+    name = 'canary-check-' + location.name.lower() + '' if prod else '-pp'
 
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
