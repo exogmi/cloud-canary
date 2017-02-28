@@ -146,8 +146,11 @@ if __name__ == "__main__":
     args = main()
     zonename = args['zonename']
     state = args['state']
+    endpoint = args['endpoint']
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
+    if '//api.exoscale.ch' not in endpoint:
+        zonename += '-pp'
 
     client = bernhard.SSLClient(host=conf.get('default', 'riemann_server'),
                                 port=int(conf.get('default', 'riemann_port')),
