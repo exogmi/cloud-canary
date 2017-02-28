@@ -99,7 +99,10 @@ def deploy_instance(args):
 
     prod = '//api.exoscale.ch' in endpoint
 
-    name = 'canary-check-' + location.name.lower() + '' if prod else '-pp'
+    name = 'canary-check-' + location.name.lower()
+
+    if not prod:
+        name += '-pp'
 
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
