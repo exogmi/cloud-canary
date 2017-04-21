@@ -108,7 +108,7 @@ def deploy_instance(args):
     logging.info('Deploying instance %s', name)
 
     node = driver.deploy_node(name=name, image=image, size=size,
-                              location=location, deploy=msd)
+                              location=location, ssh_username='ubuntu', deploy=msd)
 
     nodename = str(node.name)
     nodeid = str(node.uuid)
