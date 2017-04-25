@@ -102,6 +102,12 @@ def deploy_instance(args):
     if endpoint != 'api.exoscale.ch':
         name += '-pp'
 
+    # check if a previous canary exists
+    nodes = driver.list_nodes()
+    for n in nodes:
+        if name in n.name:
+            raise Exception('Instance with same name already exists !')
+
     script = ScriptDeployment('echo Iam alive !')
     msd = MultiStepDeployment([script])
 
