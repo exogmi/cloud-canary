@@ -81,7 +81,7 @@ def s3test(args):
     logging.info('Writing file')
     k.set_contents_from_string('This is a test of S3')
     logging.info('Write done for env %s', ENV)
-    time.sleep(1)
+    time.sleep(3)
     logging.info('Reading back the file for env %s', ENV)
 
     if k.get_contents_as_string() != "This is a test of S3":
