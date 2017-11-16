@@ -6,11 +6,11 @@
 import argparse
 import logging
 import logging.handlers
+import pprint
 import socket
 import sys
 import time
 
-from pprint import pprint
 
 try:
     from libcloud.compute.types import Provider
@@ -114,7 +114,9 @@ def deploy_instance(args):
     logging.info('Deploying instance %s', name)
 
     node = driver.deploy_node(name=name, image=image, size=size, timeout=300,
-                              location=location, ssh_username='ubuntu', deploy=msd)
+                              location=location, ssh_username='ubuntu',
+                              deploy=msd)
+    logging.debug(pprint.pformat(node))
 
     nodename = str(node.name)
     nodeid = str(node.uuid)
@@ -122,7 +124,7 @@ def deploy_instance(args):
     logging.info('Instance successfully deployed : %s, %s, %s', nodename,
                  nodeid, nodeip)
     # The stdout of the deployment can be checked on the `script` object
-    pprint(script.stdout)
+    logging.debug(pprint.pformat(script.stdout))
 
     logging.info('Successfully executed echo command thru SSH')
     logging.info('Destroying the instance now')
