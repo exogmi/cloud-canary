@@ -130,7 +130,7 @@ def s3test(args):
 if __name__ == "__main__":
     args = main()
     region = args['host'].split('.')[0]
-    logfile = "/var/log/s3-canary-{}-{}.log".format(args['env'], region)
+    logfile = "/var/log/s3-canary-{}.log".format(region)
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
 
