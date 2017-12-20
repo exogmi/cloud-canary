@@ -90,8 +90,8 @@ def s3test(args):
     BUCKET = args['bucket']
     ENV = args['env']
 
-    logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s: \
-                                %(message)s',
+    logging.basicConfig(format=('%(asctime)s %(pathname)s '
+                                '%(levelname)s:%(message)s'),
                         level=logging.DEBUG,
                         filename=logfile)
     logging.getLogger().addHandler(logging.StreamHandler())
