@@ -3,26 +3,28 @@
 # Loic Lambiel ©
 # License MIT
 
-import sys
 import argparse
 import logging
 import logging.handlers
-import time
 import socket
+import sys
+import time
 
 try:
     import boto
     import boto.s3.connection
     from boto.s3.key import Key
 except ImportError:
-    print ("It look like boto module isn't installed. Please install it using pip install boto")
+    print("It look like boto module isn't installed. \
+          Please install it using pip install boto")
     sys.exit(1)
 
 
 try:
     import bernhard
 except ImportError:
-    print ("It look like riemann client (bernard) isn't installed. Please install it using pip install bernhard")
+    print("It look like riemann client (bernard) isn't installed. \
+          Please install it using pip install bernhard")
     sys.exit(1)
 
 
@@ -30,11 +32,6 @@ try:
     from configparser import ConfigParser
 except ImportError:  # python 2
     from ConfigParser import ConfigParser
-
-logfile = "/var/log/s3-canary.log"
-logging.basicConfig(format='%(asctime)s %(pathname)s %(levelname)s:%(message)s', level=logging.DEBUG, filename=logfile)
-logging.getLogger().addHandler(logging.StreamHandler())
-logging.getLogger('boto').setLevel(logging.DEBUG)
 
 
 class CustomError(Exception):
@@ -44,14 +41,44 @@ class CustomError(Exception):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='This script create a file, read it and delete it on a s3 compliant storage. If any error occur during the process, an alarm is being sent to riemann monitoring. time metric is also sent to riemann')
-    parser.add_argument('-version', action='version', version='%(prog)s 1.0, Loic Lambiel, exoscale')
-    parser.add_argument('-key', help='S3 user key', required=True, type=str, dest='key')
-    parser.add_argument('-secret', help='S3 user secret', required=True, type=str, dest='secret')
-    parser.add_argument('-host', help='S3 host', required=True, type=str, dest='host')
-    parser.add_argument('-bucket', help='S3 bucket', required=True, type=str, dest='bucket')
-    parser.add_argument('-env', help='Environnement, ex: prod | qa etc..., will be used in the riemann service', required=True, type=str, dest='env')
-    parser.add_argument('-alertstate', help='The state of the alert to raise if the test fails', required=False, type=str, default='critical', dest='state')
+    parser = argparse.ArgumentParser(description='''
+This script create a file, read it and delete it on a s3 compliant
+storage. If any error occur during the process, an alarm is being
+sent to riemann monitoring. time metric is also sent to riemann''')
+    parser.add_argument('-version',
+                        action='version',
+                        version='%(prog)s 1.0, Loic Lambiel, exoscale')
+    parser.add_argument('-key',
+                        help='S3 user key',
+                        required=True,
+                        type=str,
+                        dest='key')
+    parser.add_argument('-secret',
+                        help='S3 user secret',
+                        required=True,
+                        type=str,
+                        dest='secret')
+    parser.add_argument('-host',
+                        help='S3 host',
+                        required=True,
+                        type=str,
+                        dest='host')
+    parser.add_argument('-bucket',
+                        help='S3 bucket',
+                        required=True,
+                        type=str,
+                        dest='bucket')
+    parser.add_argument('-env',
+                        help='Environnement used by the riemann service',
+                        required=True,
+                        type=str,
+                        dest='env')
+    parser.add_argument('-alertstate',
+                        help='Alert level to raise if the test fails',
+                        required=False,
+                        type=str,
+                        default='critical',
+                        dest='state')
     args = vars(parser.parse_args())
     return args
 
@@ -63,6 +90,12 @@ def s3test(args):
     BUCKET = args['bucket']
     ENV = args['env']
 
+    logging.basicConfig(format=('%(asctime)s %(pathname)s '
+                                '%(levelname)s:%(message)s'),
+                        level=logging.DEBUG,
+                        filename=logfile)
+    logging.getLogger().addHandler(logging.StreamHandler())
+    logging.getLogger('boto').setLevel(logging.DEBUG)
     logging.info('Test started for env %s', ENV)
 
     conn = boto.connect_s3(
@@ -92,9 +125,12 @@ def s3test(args):
     bucket.delete_key(k)
     logging.info('Bucket deleted for env %s', ENV)
 
+
 # main
 if __name__ == "__main__":
     args = main()
+    region = args['host'].split('.')[0]
+    logfile = "/var/log/s3-canary-{}.log".format(region)
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
 
@@ -131,7 +167,8 @@ if __name__ == "__main__":
         logging.exception("An exception occured. Exception is: %s", e)
         host = socket.gethostname()
         exectime = 61
-        txt = 'An exception occurred on s3_canary.py: %s. See logfile %s for more info' % (e, logfile)
+        txt = "An exception occurred on s3_canary.py: {}. \
+               See logfile {} for more info".format(e, logfile)
         client.send({'host': host,
                      'service': checkservice,
                      'description': txt,
