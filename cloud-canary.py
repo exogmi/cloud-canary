@@ -36,13 +36,6 @@ try:
 except ImportError:  # python 2
     from ConfigParser import ConfigParser
 
-logfile = "/var/log/cloud-canary.log"
-logging.basicConfig(
-    format='%(asctime)s %(pathname)s %(levelname)s:%(message)s',
-    level=logging.DEBUG,
-    filename=logfile)
-logging.getLogger().addHandler(logging.StreamHandler())
-
 
 def main():
     parser = argparse.ArgumentParser(description='''
@@ -84,6 +77,12 @@ def deploy_instance(args):
     endpoint = args['endpoint']
     template = args['template']
     offering = args['offering']
+
+    logging.basicConfig(
+        format='%(asctime)s %(pathname)s %(levelname)s:%(message)s',
+        level=logging.DEBUG,
+        filename=logfile)
+    logging.getLogger().addHandler(logging.StreamHandler())
 
     cls = get_driver(Provider.EXOSCALE)
     driver = cls(api_key, secret_key, host=endpoint)
@@ -141,6 +140,11 @@ if __name__ == "__main__":
     zonename = args['zonename']
     state = args['state']
     endpoint = args['endpoint']
+    if endpoint == "ppapi.exoscale.ch":
+        env = "pp"
+    else:
+        env = "prod"
+    logfile = "/var/log/cloud-canary-{}-{}.log".format(env, zonename)
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
     if endpoint != 'api.exoscale.ch':
