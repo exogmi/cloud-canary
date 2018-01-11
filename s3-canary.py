@@ -140,9 +140,10 @@ if __name__ == "__main__":
                                 certfile=conf.get('default', 'tls_cert'),
                                 ca_certs=conf.get('default', 'tls_ca_cert'))
     ENV = args['env']
+    HOST = args['host']
     state = args['state']
-    exectimeservice = "%s.s3_canary.exectime" % ENV
-    checkservice = "%s.s3_canary.check" % ENV
+    exectimeservice = "{}.s3_canary.exectime".format(HOST)
+    checkservice = "{}.s3_canary.check".format(HOST)
     start_time = time.time()
     try:
         s3test(args)
