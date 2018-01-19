@@ -74,9 +74,11 @@ def downloadtest(args):
 if __name__ == "__main__":
     args = main()
     ENV = args['env']
+    URL = args['url']
+    sos_domain = URL.split('/')[2]
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
-    logfile = "/var/log/download-canary-{}.log".format(ENV)
+    logfile = "/var/log/download-canary-{}.log".format(sos_domain)
     logging.basicConfig(format=('%(asctime)s %(pathname)s '
                                 '%(levelname)s:%(message)s'),
                         level=logging.DEBUG,
@@ -93,8 +95,8 @@ if __name__ == "__main__":
     logging.info('Test started for env %s', ENV)
     ENV = args['env']
     state = args['state']
-    checkservice = "%s.download_canary.check" % ENV
-    exectimeservice = "%s.download_canary.exectime" % ENV
+    checkservice = "{}.download_canary.check".format(sos_domain)
+    exectimeservice = "{}.download_canary.exectime".format(sos_domain)
     start_time = time.time()
     host = socket.gethostname()
     try:
