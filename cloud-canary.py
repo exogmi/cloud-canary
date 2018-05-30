@@ -41,7 +41,7 @@ except ImportError:  # python 2
     from ConfigParser import ConfigParser
 
 
-def ssh_execute_command(ip, command, password):
+def ssh_execute_command(ip, command, username, password):
     with SSHClient() as client:
         client.set_missing_host_key_policy(AutoAddPolicy())
         # Will try to connect during 60 seconds
@@ -49,29 +49,14 @@ def ssh_execute_command(ip, command, password):
         first_try = time.time()
         while not_connected:
             try:
-                args = {'username': 'ubuntu',
+                args = {'username': username,
                         'timeout': 15,
                         'allow_agent': False,
                         'look_for_keys': False,
-                        'banner_timeout': 15}
-                args['password'] = password
+                        'banner_timeout': 15,
+                        'password' : password }
                 client.connect(ip, **args)
                 not_connected = False
-            except socket.timeout:
-                if time.time() - first_try > 60:
-                    raise VMException("socket timeout")
-                else:
-                    time.sleep(5)
-            except socket.error:
-                if time.time() - first_try > 60:
-                    raise VMException("socket error")
-                else:
-                    time.sleep(5)
-            except EOFError:
-                if time.time() - first_try > 60:
-                    raise
-                else:
-                    time.sleep(5)
             except Exception:
                 if time.time() - first_try > 60:
                     raise
@@ -141,9 +126,13 @@ def deploy_instance(args):
     so = [so for so in cs.listServiceOfferings()['serviceoffering']
           if so['name'].lower() == offering.lower()][0]
 
-
     template = [i for i in cs.listTemplates(templatefilter='featured')['template']
                 if template.lower() in i['displaytext'].lower()][0]
+
+    try:
+        username = template['details']['username']
+    except KeyError:
+        username = 'ubuntu'
 
     name = 'canary-check-' + location['name'].lower()
 
@@ -162,8 +151,17 @@ def deploy_instance(args):
                                  zoneid=location['id'],
                                  serviceofferingid=so['id'],
                                  name=name)
+    error_calls = 0
     while True:
-        res = cs.queryAsyncJobResult(**vm)
+        try:
+            res = cs.queryAsyncJobResult(**vm)
+        except Exception as e:
+            error_calls += 1
+            if error_calls < 20:
+                logging.info("failed async job result query, retrying")
+            else:
+                raise
+
         if res['jobstatus'] != 0:
             job  = res['jobresult']
             if res['jobresultcode'] != 0:
@@ -182,7 +180,7 @@ def deploy_instance(args):
 
     logging.info('Trying connecting thru SSH')
     command = "echo Hello World"
-    stdout, stderr = ssh_execute_command(nodeip, command, vm['password'])
+    stdout, stderr = ssh_execute_command(nodeip, command, username, vm['password'])
     if stdout != 'Hello World\r\n':
         raise Execption("Error executing ssh command")
     
@@ -190,7 +188,7 @@ def deploy_instance(args):
     logging.info('Successfully executed echo command thru SSH')
     logging.info('Destroying the instance now')
 
-    result = cs.destroyVirtualMachine(id=nodeid)
+    cs.destroyVirtualMachine(id=nodeid)
 
     logging.info('Successfully destroyed the instance %s', name)
     logging.info('Script completed')
