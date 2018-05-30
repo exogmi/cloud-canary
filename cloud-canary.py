@@ -13,7 +13,7 @@ import time
 
 
 try:
-    from cs import CloudStack
+    from cs import CloudStack, CloudStackException
 except ImportError:
     print("It look like cs module isn't installed. Please install it "
           "using pip install cs")
@@ -21,7 +21,6 @@ except ImportError:
 
 try:
     from paramiko.client import AutoAddPolicy, SSHClient
-    from paramiko.rsakey import RSAKey
 except ImportError:
     print("It look like paramiko module isn't installed. Please install it "
           "using pip install paramiko")
@@ -54,7 +53,7 @@ def ssh_execute_command(ip, command, username, password):
                         'allow_agent': False,
                         'look_for_keys': False,
                         'banner_timeout': 15,
-                        'password' : password }
+                        'password': password}
                 client.connect(ip, **args)
                 not_connected = False
             except Exception:
@@ -65,6 +64,7 @@ def ssh_execute_command(ip, command, username, password):
         stdin, stdout, stderr = client.exec_command(command, get_pty=True)
         stdin.close()
         return stdout.read(), stderr.read()
+
 
 def main():
     parser = argparse.ArgumentParser(description='''
@@ -117,7 +117,6 @@ def deploy_instance(args):
                     key=api_key,
                     secret=secret_key)
 
-
     location = [location for location in cs.listZones()['zone']
                 if location['name'].lower() == zonename.lower()][0]
 
@@ -126,9 +125,10 @@ def deploy_instance(args):
     so = [so for so in cs.listServiceOfferings()['serviceoffering']
           if so['name'].lower() == offering.lower()][0]
 
-
-    template = [i for i in cs.listTemplates(templatefilter='featured', fetch_list=True)
-            if template.lower() in i['displaytext'].lower()][0]
+    template = [i for i in cs.listTemplates(
+                templatefilter='featured',
+                fetch_list=True)
+                if template.lower() in i['displaytext'].lower()][0]
 
     try:
         username = template['details']['username']
@@ -140,9 +140,7 @@ def deploy_instance(args):
     if endpoint != 'https://api.exoscale.ch/compute':
         name += '-pp'
 
-
     for node in cs.listVirtualMachines()['virtualmachine']:
-        print node
         if node['name'] == name:
             raise Exception('Instance with same name already exists !')
 
@@ -156,7 +154,7 @@ def deploy_instance(args):
     while True:
         try:
             res = cs.queryAsyncJobResult(**vm)
-        except Exception as e:
+        except CloudStackException:
             error_calls += 1
             if error_calls < 20:
                 logging.info("failed async job result query, retrying")
@@ -164,9 +162,7 @@ def deploy_instance(args):
                 raise
 
         if res['jobstatus'] != 0:
-            job  = res['jobresult']
-            if res['jobresultcode'] != 0:
-                ok = False
+            job = res['jobresult']
             break
         time.sleep(3)
 
@@ -181,10 +177,10 @@ def deploy_instance(args):
 
     logging.info('Trying connecting thru SSH')
     command = "echo Hello World"
-    stdout, stderr = ssh_execute_command(nodeip, command, username, vm['password'])
+    stdout, stderr = ssh_execute_command(nodeip, command,
+                                         username, vm['password'])
     if stdout != 'Hello World\r\n':
-        raise Execption("Error executing ssh command")
-    
+        raise Exception("Error executing ssh command")
 
     logging.info('Successfully executed echo command thru SSH')
     logging.info('Destroying the instance now')
@@ -194,6 +190,7 @@ def deploy_instance(args):
     logging.info('Successfully destroyed the instance %s', name)
     logging.info('Script completed')
     
+
 # main
 if __name__ == "__main__":
     args = main()

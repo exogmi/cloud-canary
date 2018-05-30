@@ -9,6 +9,6 @@ Depends: ${misc:Depends},
          python-boto,
          python-crypto,
          python-ecdsa
-         python-libcloud,
+         python-cs,
          python-paramiko
 Description: check cloud provider availability
