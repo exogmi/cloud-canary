@@ -146,7 +146,6 @@ def deploy_instance(args):
                 if template.lower() in i['displaytext'].lower()][0]
 
     name = 'canary-check-' + location['name'].lower()
-    name = 'test-canary-check-' + location['name'].lower()
 
     if endpoint != 'https://api.exoscale.ch/compute':
         name += '-pp'
@@ -207,7 +206,6 @@ if __name__ == "__main__":
     else:
         env = "prod"
     logfile = "/var/log/cloud-canary-{}-{}.log".format(env, zonename)
-    logfile = "cloud-canary-{}-{}.log".format(env, zonename)
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
     if endpoint != 'api.exoscale.ch':
