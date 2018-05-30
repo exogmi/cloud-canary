@@ -13,14 +13,18 @@ import time
 
 
 try:
-    from libcloud.compute.types import Provider
-    from libcloud.compute.providers import get_driver
-    from libcloud.compute.deployment import ScriptDeployment
-    from libcloud.compute.deployment import MultiStepDeployment
-    from libcloud.compute.base import NodeImage
+    from cs import CloudStack
 except ImportError:
-    print("It look like libcloud module isn't installed. Please install it "
-          "using pip install apache-libcloud")
+    print("It look like cs module isn't installed. Please install it "
+          "using pip install cs")
+    sys.exit(1)
+
+try:
+    from paramiko.client import AutoAddPolicy, SSHClient
+    from paramiko.rsakey import RSAKey
+except ImportError:
+    print("It look like paramiko module isn't installed. Please install it "
+          "using pip install paramiko")
     sys.exit(1)
 
 
@@ -36,6 +40,46 @@ try:
 except ImportError:  # python 2
     from ConfigParser import ConfigParser
 
+
+def ssh_execute_command(ip, command, password):
+    with SSHClient() as client:
+        client.set_missing_host_key_policy(AutoAddPolicy())
+        # Will try to connect during 60 seconds
+        not_connected = True
+        first_try = time.time()
+        while not_connected:
+            try:
+                args = {'username': 'ubuntu',
+                        'timeout': 15,
+                        'allow_agent': False,
+                        'look_for_keys': False,
+                        'banner_timeout': 15}
+                args['password'] = password
+                client.connect(ip, **args)
+                not_connected = False
+            except socket.timeout:
+                if time.time() - first_try > 60:
+                    raise VMException("socket timeout")
+                else:
+                    time.sleep(5)
+            except socket.error:
+                if time.time() - first_try > 60:
+                    raise VMException("socket error")
+                else:
+                    time.sleep(5)
+            except EOFError:
+                if time.time() - first_try > 60:
+                    raise
+                else:
+                    time.sleep(5)
+            except Exception:
+                if time.time() - first_try > 60:
+                    raise
+                else:
+                    time.sleep(5)
+        stdin, stdout, stderr = client.exec_command(command, get_pty=True)
+        stdin.close()
+        return stdout.read(), stderr.read()
 
 def main():
     parser = argparse.ArgumentParser(description='''
@@ -74,7 +118,7 @@ def deploy_instance(args):
     api_key = args['acskey']
     secret_key = args['acssecret']
     zonename = args['zonename']
-    endpoint = args['endpoint']
+    endpoint = "https://" + args['endpoint'] + "/compute"
     template = args['template']
     offering = args['offering']
 
@@ -84,56 +128,74 @@ def deploy_instance(args):
         filename=logfile)
     logging.getLogger().addHandler(logging.StreamHandler())
 
-    cls = get_driver(Provider.EXOSCALE)
-    driver = cls(api_key, secret_key, host=endpoint)
+    cs = CloudStack(endpoint=endpoint,
+                    key=api_key,
+                    secret=secret_key)
 
-    location = [location for location in driver.list_locations()
-                if location.name.lower() == zonename.lower()][0]
 
-    size = [size for size in driver.list_sizes() if size.name == offering][0]
-    images = [i for i in driver.list_images()
-              if template.lower() in i.extra['displaytext'].lower()]
-    images = sorted(images, key=lambda i: i.extra['displaytext'], reverse=True)
-    image = NodeImage(id=images[0].id, name=images[0].name, driver=driver)
+    location = [location for location in cs.listZones()['zone']
+                if location['name'].lower() == zonename.lower()][0]
 
-    name = 'canary-check-' + location.name.lower()
+    logging.info("Zone selected : %s", location)
 
-    if endpoint != 'api.exoscale.ch':
+    so = [so for so in cs.listServiceOfferings()['serviceoffering']
+          if so['name'].lower() == offering.lower()][0]
+
+
+    template = [i for i in cs.listTemplates(templatefilter='featured')['template']
+                if template.lower() in i['displaytext'].lower()][0]
+
+    name = 'canary-check-' + location['name'].lower()
+    name = 'test-canary-check-' + location['name'].lower()
+
+    if endpoint != 'https://api.exoscale.ch/compute':
         name += '-pp'
 
-    # check if a previous canary exists
-    nodes = driver.list_nodes()
-    for n in nodes:
-        if name in n.name:
-            raise Exception('Instance with same name already exists !')
 
-    script = ScriptDeployment('echo Iam alive !')
-    msd = MultiStepDeployment([script])
+    for node in cs.listVirtualMachines()['virtualmachine']:
+        print node
+        if node['name'] == name:
+            raise Exception('Instance with same name already exists !')
 
     logging.info('Deploying instance %s', name)
 
-    node = driver.deploy_node(name=name, image=image, size=size, timeout=300,
-                              location=location, ssh_username='ubuntu',
-                              deploy=msd)
-    logging.debug(pprint.pformat(node))
+    vm = cs.deployVirtualMachine(templateid=template['id'],
+                                 zoneid=location['id'],
+                                 serviceofferingid=so['id'],
+                                 name=name)
+    while True:
+        res = cs.queryAsyncJobResult(**vm)
+        if res['jobstatus'] != 0:
+            job  = res['jobresult']
+            if res['jobresultcode'] != 0:
+                ok = False
+            break
+        time.sleep(3)
 
-    nodename = str(node.name)
-    nodeid = str(node.uuid)
-    nodeip = str(node.public_ips)
+    logging.debug(pprint.pformat(job))
+    vm = job['virtualmachine']
+
+    nodename = str(vm['name'])
+    nodeid = str(vm['id'])
+    nodeip = str(vm['nic'][0]['ipaddress'])
     logging.info('Instance successfully deployed : %s, %s, %s', nodename,
                  nodeid, nodeip)
-    # The stdout of the deployment can be checked on the `script` object
-    logging.debug(pprint.pformat(script.stdout))
+
+    logging.info('Trying connecting thru SSH')
+    command = "echo Hello World"
+    stdout, stderr = ssh_execute_command(nodeip, command, vm['password'])
+    if stdout != 'Hello World\r\n':
+        raise Execption("Error executing ssh command")
+    
 
     logging.info('Successfully executed echo command thru SSH')
     logging.info('Destroying the instance now')
-    # destroy our canary node
-    driver.destroy_node(node)
+
+    result = cs.destroyVirtualMachine(id=nodeid)
 
     logging.info('Successfully destroyed the instance %s', name)
     logging.info('Script completed')
-
-
+    
 # main
 if __name__ == "__main__":
     args = main()
@@ -145,11 +207,11 @@ if __name__ == "__main__":
     else:
         env = "prod"
     logfile = "/var/log/cloud-canary-{}-{}.log".format(env, zonename)
+    logfile = "cloud-canary-{}-{}.log".format(env, zonename)
     conf = ConfigParser()
     conf.read(("/etc/bernhard.conf",))
     if endpoint != 'api.exoscale.ch':
         zonename += '-pp'
-
     client = bernhard.SSLClient(host=conf.get('default', 'riemann_server'),
                                 port=int(conf.get('default', 'riemann_port')),
                                 keyfile=conf.get('default', 'tls_cert_key'),

@@ -15,7 +15,7 @@ The goal of the script is to schedule a recurring test on a given cloud provider
 
 The goal of the script is to schedule a recurring test on a given s3 provider by creating a file, read it's content and delete it. If any exception occur during the process, an alarm is sent to Riemann monitoring system. Exec time metric is also sent to Riemann to get the latency.
 
-These scripts relies on Apache Libcloud (https://libcloud.apache.org/) and Riemann (http://riemann.io/) and boto.
+These scripts relies on the CS python CloudStack api wrapper (https://github.com/exoscale/cs) and Riemann (http://riemann.io/) and boto.
 
 Requirements
 ------------
@@ -23,10 +23,10 @@ Requirements
 You may install the requirements using the following commands:
 
 ```
-pip install apache-libcloud
+pip install cs
 pip install paramiko (may require python-dev package)
 pip install bernhard
 pip install boto
 ```
 
-Scripts tested only on Ubuntu.
+Scripts tested only on Ubuntu and MacOS X.
