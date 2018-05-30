@@ -126,8 +126,9 @@ def deploy_instance(args):
     so = [so for so in cs.listServiceOfferings()['serviceoffering']
           if so['name'].lower() == offering.lower()][0]
 
-    template = [i for i in cs.listTemplates(templatefilter='featured')['template']
-                if template.lower() in i['displaytext'].lower()][0]
+
+    template = [i for i in cs.listTemplates(templatefilter='featured', fetch_list=True)
+            if template.lower() in i['displaytext'].lower()][0]
 
     try:
         username = template['details']['username']
